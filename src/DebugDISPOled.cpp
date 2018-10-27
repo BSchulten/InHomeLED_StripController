@@ -1,7 +1,7 @@
 #include "DebugDISPOled.h"
 
 debugdisplay::debugdisplay(void){
-    this->display = new SSD1306Wire(0x3c, PIN_SCL, PIN_SDA);
+    this->display = new SSD1306Wire(0x3c, PIN_SCL, PIN_SDA,  DISPLAYTYPE);
     
 }
 

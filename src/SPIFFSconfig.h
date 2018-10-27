@@ -33,6 +33,7 @@ class wifiConfigManager{
     bool saveWifiConfig();
     bool enterSetupAPMode();
     bool handleSetup();
+    bool connectWifi();
     private:
 };
 

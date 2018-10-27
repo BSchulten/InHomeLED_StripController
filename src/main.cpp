@@ -11,25 +11,49 @@
 #include "config.h"
 #include "DebugDISPOled.h"
 #include "SPIFFSconfig.h"
+#include "LEDServer.h"
 
 
+
+/*
+*    
+*/
+void initSPIFFS();
+void setupPINS();
+
+
+/*
+*    Global Objects
+*/
 debugdisplay display;
 wifiConfigManager configmanager(&display);
+LEDServer mainserver(&display);
 
-
-void initSPIFFS();
-
+/*
+*   System Functions
+*/
 void setup() {
+    if (SERIALOUT == true){
+        Serial.begin(115200);
+    }
+    setupPINS();
     display.init();
     initSPIFFS();
-
     configmanager.handleSetup();
-}
-
-void loop() {
+    Serial.println(WiFi.SSID());
+    Serial.println(WiFi.localIP());
+    mainserver.start();
     
 }
 
+void loop() {   
+
+}
+
+
+/*
+*    Helper Functions
+*/
 void initSPIFFS(){
     if (SPIFFS.begin(false, "/spiffs", 10)){
         display.printS(0,10, "SPIFFS OK");
@@ -38,4 +62,16 @@ void initSPIFFS(){
         display.printS(0,10, "SPIFFS FAIL!");
     }
 }
+
+void setupPINS(){
+    pinMode(PIN_POWERRELAY, OUTPUT);
+    digitalWrite(PIN_POWERRELAY, LOW);
+
+    pinMode(PIN_OUTPUTENABLE, OUTPUT);
+    digitalWrite(PIN_OUTPUTENABLE, LOW);
+
+    pinMode(PIN_WS2812, OUTPUT);
+    digitalWrite(PIN_WS2812, LOW);
+}
+
 
