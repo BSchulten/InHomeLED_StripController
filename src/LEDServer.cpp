@@ -192,3 +192,7 @@ void LEDServer::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
         }
     }
 }
+
+void LEDServer::broadcastUDPTest(){
+
+}
