@@ -10,11 +10,28 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
+class serverConfig{
+    public:
+        bool isdefault;
+        String APSSID;
+        String APPWD;
+        String stationSSID;
+        String stationPWD;
+        int recieverID;
+        String recieverNameTag;
+        String devicerole;
+    private:
+};
+
 class LEDServer{
     public:
         LEDServer(debugdisplay *disp);
+        serverConfig *serverConfigData;
         LEDServer();
         int start();
+        bool startMasterServer();
+        bool startSlaveServer();
+        bool readWifiConfig();
         bool stop();
         static void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                AwsEventType type, void *arg, uint8_t *data, size_t len);

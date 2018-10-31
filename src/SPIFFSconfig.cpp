@@ -5,6 +5,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 
 wifiConfigManager::wifiConfigManager(debugdisplay *disp)
 {
+    configData = new configSave();
     display = *disp;
     configmanagerhelper = this;
 }
@@ -26,15 +27,15 @@ bool wifiConfigManager::readWifiConfig()
         DynamicJsonBuffer jsonBuffer;
         JsonObject &json = jsonBuffer.parseObject(buf.get());
 
-        configData.isdefault = json["isDefault"];
-        configData.APSSID = json["APSSID"].as<String>();
-        configData.APPWD = json["APPWD"].as<String>();
-        configData.stationSSID = json["stationSSID"].as<String>();
-        configData.stationPWD = json["stationPWD"].as<String>();
-        configData.recieverID = json["recieverID"].as<int>();
-        configData.recieverNameTag = json["recieverNameTag"].as<String>();
+        configData->isdefault = json["isDefault"];
+        configData->APSSID = json["APSSID"].as<String>();
+        configData->APPWD = json["APPWD"].as<String>();
+        configData->stationSSID = json["stationSSID"].as<String>();
+        configData->stationPWD = json["stationPWD"].as<String>();
+        configData->recieverID = json["recieverID"].as<int>();
+        configData->recieverNameTag = json["recieverNameTag"].as<String>();
 
-        display.printS(0, 30, "Json OK: " + configmanagerhelper->configData.stationSSID);
+        display.printS(0, 30, "Json OK: " + configmanagerhelper->configData->stationSSID);
         wificonfigfile.close();
     }
     return true;
@@ -48,13 +49,13 @@ bool wifiConfigManager::saveWifiConfig()
         DynamicJsonBuffer jsonBuffer;
         JsonObject &savejson = jsonBuffer.createObject();
 
-        savejson["isDefault"] = configData.isdefault;
-        savejson["APSSID"] = configData.APSSID;
-        savejson["APPWD"] = configData.APPWD;
-        savejson["stationSSID"] = configData.stationSSID;
-        savejson["stationPWD"] = configData.stationPWD;
-        savejson["recieverID"] = configData.recieverID;
-        savejson["recieverNameTag"] = configData.recieverNameTag;
+        savejson["isDefault"] = configData->isdefault;
+        savejson["APSSID"] = configData->APSSID;
+        savejson["APPWD"] = configData->APPWD;
+        savejson["stationSSID"] = configData->stationSSID;
+        savejson["stationPWD"] = configData->stationPWD;
+        savejson["recieverID"] = configData->recieverID;
+        savejson["recieverNameTag"] = configData->recieverNameTag;
         savejson.printTo(wificonfigfile);
         wificonfigfile.close();
 
@@ -63,8 +64,8 @@ bool wifiConfigManager::saveWifiConfig()
         ######################*/
         display.clearScreen();
         display.print(0, 0, "New Config:");
-        display.print(0, 10, "StationSSID: " + configData.stationSSID);
-        display.print(0, 20, "stationPWD: " + configData.stationPWD);
+        display.print(0, 10, "StationSSID: " + configData->stationSSID);
+        display.print(0, 20, "stationPWD: " + configData->stationPWD);
         display.show();
 
         return true;
@@ -78,8 +79,8 @@ bool wifiConfigManager::saveWifiConfig()
 bool wifiConfigManager::enterSetupAPMode()
 {
     Serial.println("Starting ConfigAP");
-    WiFi.softAP(configData.APSSID.c_str(), configData.APPWD.c_str());
-    display.printS(0, 40, "AP running:" + configData.APSSID);
+    WiFi.softAP(configData->APSSID.c_str(), configData->APPWD.c_str());
+    display.printS(0, 40, "AP running:" + configData->APSSID);
     configserver = new AsyncWebServer(80);
     configws = new AsyncWebSocket("/");
 
@@ -97,20 +98,20 @@ bool wifiConfigManager::enterSetupAPMode()
     display.printS(0, 50, WiFi.softAPIP().toString());
     Serial.println("ConfigAP started!");
     Serial.println("SSID: " + WiFi.softAPIP().toString());
-    Serial.println("SSID: " + configData.APPWD);
+    Serial.println("SSID: " + configData->APPWD);
     return true;
 }
 
 bool wifiConfigManager::handleSetup()
 {
     this->readWifiConfig();
-    if (configData.isdefault == true)
+    if (configData->isdefault == true)
     {
         display.printS(60, 0, "Default");
         enterSetupAPMode();
         return true;
     }
-    else if (configData.stationSSID == "0")
+    else if (configData->stationSSID == "0")
     {
         display.printS(60, 0, "is 0");
         enterSetupAPMode();
@@ -118,10 +119,10 @@ bool wifiConfigManager::handleSetup()
     }
     else
     {
-        WiFi.begin(configData.stationSSID.c_str(), configData.stationPWD.c_str());
+        WiFi.begin(configData->stationSSID.c_str(), configData->stationPWD.c_str());
         Serial.println("Connecting to Wifi:");
-        Serial.println("SSID: " + configData.stationSSID);
-        Serial.println("PWD: " + configData.stationPWD);
+        Serial.println("SSID: " + configData->stationSSID);
+        Serial.println("PWD: " + configData->stationPWD);
         long connectionTimeout = millis();
         long texttime = 0;
         while (WiFi.status() != WL_CONNECTED)
@@ -145,6 +146,7 @@ bool wifiConfigManager::handleSetup()
         Serial.println("Connected!");
         display.printS(0, 40, "Connected to:");
         display.printS(0, 50, WiFi.SSID());
+        delete configData;
         return true;
     }
     return true;
@@ -153,23 +155,23 @@ bool wifiConfigManager::handleSetup()
 bool wifiConfigManager::connectWifi()
 {
     this->readWifiConfig();
-    if (configData.isdefault == true)
+    if (configData->isdefault == true)
     {
         display.printS(60, 0, "Default");
-        WiFi.softAP(configData.APSSID.c_str(), configData.APPWD.c_str());
-        display.printS(0, 40, "AP running:" + configData.APSSID);
+        WiFi.softAP(configData->APSSID.c_str(), configData->APPWD.c_str());
+        display.printS(0, 40, "AP running:" + configData->APSSID);
         return false;
     }
-    else if (configData.stationSSID == "0")
+    else if (configData->stationSSID == "0")
     {
         display.printS(60, 0, "is 0");
-        WiFi.softAP(configData.APSSID.c_str(), configData.APPWD.c_str());
-        display.printS(0, 40, "AP running:" + configData.APSSID);
+        WiFi.softAP(configData->APSSID.c_str(), configData->APPWD.c_str());
+        display.printS(0, 40, "AP running:" + configData->APSSID);
         return false;
     }
     else
     {
-        WiFi.begin(configData.stationSSID.c_str(), configData.stationPWD.c_str());
+        WiFi.begin(configData->stationSSID.c_str(), configData->stationPWD.c_str());
         long connectionTimeout = millis();
         while (WiFi.status() != WL_CONNECTED)
         {
@@ -180,8 +182,8 @@ bool wifiConfigManager::connectWifi()
             else
             { //Connection Timed Out
                 display.printS(60, 0, "Timeout");
-                WiFi.softAP(configData.APSSID.c_str(), configData.APPWD.c_str());
-                display.printS(0, 40, "AP running:" + configData.APSSID);
+                WiFi.softAP(configData->APSSID.c_str(), configData->APPWD.c_str());
+                display.printS(0, 40, "AP running:" + configData->APSSID);
                 return false;
             }
         }
@@ -214,14 +216,14 @@ void handleMessage(AsyncWebSocketClient *client, uint8_t *rawdata, String msg)
         }
         else if (parsed["command"] == "config")
         {
-            configmanagerhelper->configData.stationSSID = parsed["stationSSID"].as<String>();
-            configmanagerhelper->configData.stationPWD = parsed["stationPWD"].as<String>();
-            configmanagerhelper->configData.isdefault = parsed["isDefault"].as<boolean>();
+            configmanagerhelper->configData->stationSSID = parsed["stationSSID"].as<String>();
+            configmanagerhelper->configData->stationPWD = parsed["stationPWD"].as<String>();
+            configmanagerhelper->configData->isdefault = parsed["isDefault"].as<boolean>();
             configmanagerhelper->saveWifiConfig();
             Serial.println("Saved Config:");
-            Serial.println("SSID:" + configmanagerhelper->configData.stationSSID);
-            Serial.println("stationPWD:" + configmanagerhelper->configData.stationPWD);
-            Serial.println("isDefault:" + configmanagerhelper->configData.isdefault);
+            Serial.println("SSID:" + configmanagerhelper->configData->stationSSID);
+            Serial.println("stationPWD:" + configmanagerhelper->configData->stationPWD);
+            Serial.println("isDefault:" + configmanagerhelper->configData->isdefault);
             
         }
         else

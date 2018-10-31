@@ -3,14 +3,33 @@
 LEDServer::LEDServer(debugdisplay *disp)
 {
     display = *disp;
+    serverConfigData = new serverConfig();
 }
 
 LEDServer::LEDServer()
 {
-
+    serverConfigData = new serverConfig();
 }
 
 int LEDServer::start(){ //returns 1 for successfull start, anything else is an error
+    if (this->readWifiConfig()){
+        Serial.println("Read Config");
+    }
+    else {
+        Serial.println("Config read FAIL");
+        return 2;
+    }
+    
+    if (serverConfigData->devicerole == "MASTER"){
+        Serial.println("Device is Master");
+        this->startMasterServer();
+    }
+    else if (serverConfigData->devicerole == "SLAVE"){
+        Serial.println("Device is Slave");
+    }
+}
+
+bool  LEDServer::startMasterServer(){
     WebServer = new AsyncWebServer(80);
     wsServer = new AsyncWebSocket("/");
 
@@ -33,6 +52,37 @@ int LEDServer::start(){ //returns 1 for successfull start, anything else is an e
     return 1;
 }
 
+
+bool LEDServer::readWifiConfig()
+{
+    File wificonfigfile = SPIFFS.open("/wificonfig.json", FILE_READ);
+    if (!wificonfigfile)
+    {
+        display.printS(0, 20, "WIFICONFIG FAILED");
+    }
+    else
+    {
+        display.printS(0, 20, "WIFICONFIG OK");
+
+        size_t size = wificonfigfile.size();
+        std::unique_ptr<char[]> buf(new char[size]);
+        wificonfigfile.readBytes(buf.get(), size);
+        DynamicJsonBuffer jsonBuffer;
+        JsonObject &json = jsonBuffer.parseObject(buf.get());
+        serverConfigData->devicerole = json["DEVICEROLE"].as<String>();
+        serverConfigData->isdefault = json["isDefault"];
+        serverConfigData->APSSID = json["APSSID"].as<String>();
+        serverConfigData->APPWD = json["APPWD"].as<String>();
+        serverConfigData->stationSSID = json["stationSSID"].as<String>();
+        serverConfigData->stationPWD = json["stationPWD"].as<String>();
+        serverConfigData->recieverID = json["recieverID"].as<int>();
+        serverConfigData->recieverNameTag = json["recieverNameTag"].as<String>();
+        
+        display.printS(0, 30, "Json OK: " + serverConfigData->stationSSID);
+        wificonfigfile.close();
+    }
+    return true;
+}
 
 void LEDServer::handleMessage(AsyncWebSocketClient *client, uint8_t *rawdata, String msg)
 {

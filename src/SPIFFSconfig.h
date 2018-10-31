@@ -25,7 +25,7 @@ class configSave{
 class wifiConfigManager{
     public:
     debugdisplay display;
-    configSave configData;
+    configSave *configData;
     AsyncWebServer *configserver;
     AsyncWebSocket *configws;
     wifiConfigManager(debugdisplay *disp);
