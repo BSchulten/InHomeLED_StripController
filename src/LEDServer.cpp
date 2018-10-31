@@ -46,7 +46,7 @@ bool  LEDServer::startMasterServer(){
 	WebServer->serveStatic("/js/bootstrap.min.js", SPIFFS, "/js/bootstrap.min.js");
 	WebServer->serveStatic("/css/bootstrap.min.css", SPIFFS, "css/bootstrap.min.css");
 	WebServer->begin();
-
+    udpserver = new AsyncUDP();
     Serial.println("Server started");
 
     return 1;
@@ -194,5 +194,6 @@ void LEDServer::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 }
 
 void LEDServer::broadcastUDPTest(){
+  udpserver->broadcastTo("Anyone here?", 1234);
 
 }

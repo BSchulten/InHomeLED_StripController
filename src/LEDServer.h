@@ -9,6 +9,7 @@
 #include <ArduinoJson.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include "ESPAsyncUDP.h"
 
 class serverConfig{
     public:
@@ -32,12 +33,14 @@ class LEDServer{
         bool startMasterServer();
         bool startSlaveServer();
         bool readWifiConfig();
+        void broadcastUDPTest();
         bool stop();
         static void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                AwsEventType type, void *arg, uint8_t *data, size_t len);
         static void handleMessage(AsyncWebSocketClient *client, uint8_t *rawdata, String msg);
         AsyncWebServer *WebServer;
         AsyncWebSocket *wsServer;
+        AsyncUDP *udpserver;
     private:
         debugdisplay display;
 };

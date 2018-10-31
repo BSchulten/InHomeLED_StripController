@@ -10,6 +10,7 @@
 
 #define I2CDisplay_CONNECTED true
 #define SERIALOUT true
+#define UDPPORT 1234
 
 
 /* 
