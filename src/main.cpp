@@ -46,8 +46,12 @@ void setup() {
     
 }
 
-void loop() {   
-
+long xtime = 0;
+void loop() {
+    if (xtime + 1000 < millis()){
+        //mainserver.UDPBroadcast();
+        xtime = millis();
+    }
 }
 
 

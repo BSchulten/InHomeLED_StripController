@@ -26,13 +26,14 @@ int LEDServer::start(){ //returns 1 for successfull start, anything else is an e
     }
     else if (serverConfigData->devicerole == "SLAVE"){
         Serial.println("Device is Slave");
+        this->startSlaveServer();
     }
 }
 
 bool  LEDServer::startMasterServer(){
     WebServer = new AsyncWebServer(80);
     wsServer = new AsyncWebSocket("/");
-
+    udp = new AsyncUDP();
     wsServer->onEvent(this->onWsEvent);
     WebServer->addHandler(wsServer);
 
@@ -50,6 +51,41 @@ bool  LEDServer::startMasterServer(){
     Serial.println("Server started");
 
     return 1;
+}
+
+bool LEDServer::startSlaveServer(){
+    udp = new AsyncUDP();
+    if(udp->listenMulticast(IPAddress(239,1,2,3), 1234)) {
+        Serial.print("UDP Listening on IP: ");
+        Serial.println(WiFi.localIP());
+        udp->onPacket([](AsyncUDPPacket packet) {
+            Serial.print("UDP Packet Type: ");
+            Serial.print(packet.isBroadcast()?"Broadcast":packet.isMulticast()?"Multicast":"Unicast");
+            Serial.print(", From: ");
+            Serial.print(packet.remoteIP());
+            Serial.print(":");
+            Serial.print(packet.remotePort());
+            Serial.print(", To: ");
+            Serial.print(packet.localIP());
+            Serial.print(":");
+            Serial.print(packet.localPort());
+            Serial.print(", Length: ");
+            Serial.print(packet.length());
+            Serial.print(", Data: ");
+            Serial.write(packet.data(), packet.length());
+            Serial.println();
+            //reply to the client
+            //packet.printf("Got %u bytes of data", packet.length());
+        });
+    }
+        return true;
+}
+
+
+void LEDServer::UDPBroadcast(){
+    udp->broadcastTo("broadcastto",1234);
+    //udp->print("Print!");
+    Serial.println("Broadcastet!");
 }
 
 
