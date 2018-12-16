@@ -56,6 +56,9 @@ bool wifiConfigManager::saveWifiConfig()
         savejson["stationPWD"] = configData->stationPWD;
         savejson["recieverID"] = configData->recieverID;
         savejson["recieverNameTag"] = configData->recieverNameTag;
+        savejson["DEVICEROLE"] = configData->devicerole;
+        savejson["LEDVariant"] = configData->LEDVariant;
+        savejson["numberLEDS"] = configData->numLeds;
         savejson.printTo(wificonfigfile);
         wificonfigfile.close();
 
@@ -219,6 +222,9 @@ void handleMessage(AsyncWebSocketClient *client, uint8_t *rawdata, String msg)
             configmanagerhelper->configData->stationSSID = parsed["stationSSID"].as<String>();
             configmanagerhelper->configData->stationPWD = parsed["stationPWD"].as<String>();
             configmanagerhelper->configData->isdefault = parsed["isDefault"].as<boolean>();
+            configmanagerhelper->configData->devicerole = parsed["isMaster"].as<String>();
+            configmanagerhelper->configData->LEDVariant = parsed["LEDVariant"].as<String>();
+            configmanagerhelper->configData->numLeds = parsed["numberLEDS"];
             configmanagerhelper->saveWifiConfig();
             Serial.println("Saved Config:");
             Serial.println("SSID:" + configmanagerhelper->configData->stationSSID);

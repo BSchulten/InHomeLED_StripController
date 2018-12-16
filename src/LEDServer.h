@@ -10,6 +10,7 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include "AsyncUDP.h"
+#include <FastLED.h>
 
 class serverConfig{
     public:
@@ -21,6 +22,20 @@ class serverConfig{
         int recieverID;
         String recieverNameTag;
         String devicerole;
+        String LEDVariant;
+        int numberLEDS;
+    private:
+};
+
+class serverState{
+    public:
+        int solidcolor_r;
+        int solidcolor_g;
+        int solidcolor_b;
+        int mode;
+        String lastRawMsg;
+        bool OutputDone = false;
+        int interruptCounter = 0;
     private:
 };
 
@@ -30,19 +45,28 @@ class LEDServer{
         serverConfig *serverConfigData;
         LEDServer();
         int start();
-        bool startMasterServer();
-        bool startSlaveServer();
+        CRGB *leds;
         void UDPBroadcast();
         bool readWifiConfig();
         bool stop();
         static void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                AwsEventType type, void *arg, uint8_t *data, size_t len);
         static void handleMessage(AsyncWebSocketClient *client, uint8_t *rawdata, String msg);
+        void IRAM_ATTR InternalTimerISR();
+        bool update();
+        static bool factoryreset();
+        bool saveWifiConfig();
+        bool enterAPMode();
+        bool connectWifi();
         AsyncWebServer *WebServer;
         AsyncWebSocket *wsServer;
         AsyncUDP *udp;
+        serverState serverStateData;
     private:
         debugdisplay display;
+        bool startMasterServer();
+        bool startSlaveServer();
+
 };
 
 #endif

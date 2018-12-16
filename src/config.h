@@ -16,8 +16,8 @@
 *   DisplayType Setup
 *   Uncommend the right Type of Display
 */
-//#define DISPLAYTYPE  GEOMETRY_128_32
-#define DISPLAYTYPE  GEOMETRY_128_64
+#define DISPLAYTYPE  GEOMETRY_128_32
+//#define DISPLAYTYPE  GEOMETRY_128_64
 
 /*
 *
@@ -27,9 +27,9 @@
 
 #define PIN_SCL 21
 #define PIN_SDA 22
-#define PIN_MOSFET_R 17 // 4
-#define PIN_MOSFET_G 18 // 17
-#define PIN_MOSFET_B 19 // 27
+#define PIN_MOSFET_R 18 // 4
+#define PIN_MOSFET_G 19 // 17
+#define PIN_MOSFET_B 17 // 27
 #define PIN_WS2812 25
 #define PIN_OUTPUTENABLE 19
 #define PIN_POWERRELAY 16

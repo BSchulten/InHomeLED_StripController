@@ -19,6 +19,9 @@ class configSave{
         String stationPWD;
         int recieverID;
         String recieverNameTag;
+        String devicerole;
+        String LEDVariant;
+        int numLeds;
     private:
 };
 

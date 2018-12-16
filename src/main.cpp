@@ -39,9 +39,9 @@ void setup() {
     setupPINS();
     display.init();
     initSPIFFS();
-    configmanager.handleSetup();
-    Serial.println(WiFi.SSID());
-    Serial.println(WiFi.localIP());
+    //configmanager.handleSetup();
+    //Serial.println(WiFi.SSID());
+    //Serial.println(WiFi.localIP());
     mainserver.start();
     
 }
@@ -52,6 +52,8 @@ void loop() {
         //mainserver.UDPBroadcast();
         xtime = millis();
     }
+
+    mainserver.update();
 }
 
 
@@ -60,10 +62,12 @@ void loop() {
 */
 void initSPIFFS(){
     if (SPIFFS.begin(false, "/spiffs", 10)){
-        display.printS(0,10, "SPIFFS OK");
+        //display.printS(0,10, "SPIFFS OK");
+        Serial.println("SPIFFS OK");
     }
     else {
-        display.printS(0,10, "SPIFFS FAIL!");
+        //display.printS(0,10, "SPIFFS FAIL!");
+        Serial.println("SPIFFS FAIL");
     }
 }
 
@@ -73,9 +77,6 @@ void setupPINS(){
 
     pinMode(PIN_OUTPUTENABLE, OUTPUT);
     digitalWrite(PIN_OUTPUTENABLE, LOW);
-
-    pinMode(PIN_WS2812, OUTPUT);
-    digitalWrite(PIN_WS2812, LOW);
 }
 
 

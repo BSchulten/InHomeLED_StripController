@@ -11,7 +11,8 @@ void debugdisplay::init(void){
 	display->setFont(ArialMT_Plain_10);
 	display->setColor(WHITE);
 	display->setTextAlignment(TEXT_ALIGN_LEFT);
-    display->drawString(0, 0, "Display OK");
+    //display->drawString(0, 0, "Display OK");
+    Serial.println("Display OK");
     display->display();
 }
 
@@ -30,4 +31,5 @@ void debugdisplay::printS(int16_t x, int16_t y, String string){ //x-> right  y->
 
 void debugdisplay::clearScreen(){
     display->clear();
+    display->display();
 }
