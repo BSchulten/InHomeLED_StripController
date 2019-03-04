@@ -24,6 +24,7 @@ class serverConfig{
         String devicerole;
         String LEDVariant;
         int numberLEDS;
+        String extrafeatures;
     private:
 };
 
@@ -36,6 +37,9 @@ class serverState{
         String lastRawMsg;
         bool OutputDone = false;
         int interruptCounter = 0;
+        volatile int PCRCounter = 0;
+        int framecounter = 0;
+        long lastswitchtoggle = 0; 
     private:
 };
 
@@ -58,6 +62,8 @@ class LEDServer{
         bool saveWifiConfig();
         bool enterAPMode();
         bool connectWifi();
+        void InternalPCR();
+
         AsyncWebServer *WebServer;
         AsyncWebSocket *wsServer;
         AsyncUDP *udp;

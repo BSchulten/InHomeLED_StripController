@@ -33,6 +33,6 @@
 #define PIN_WS2812 25
 #define PIN_OUTPUTENABLE 19
 #define PIN_POWERRELAY 16
-
+#define PIN_SWITCH 26
 
 #endif
