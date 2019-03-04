@@ -25,6 +25,7 @@ class serverConfig{
         String LEDVariant;
         int numberLEDS;
         String extrafeatures;
+        IPAddress* Slaves;
     private:
 };
 
@@ -40,13 +41,14 @@ class serverState{
         volatile int PCRCounter = 0;
         int framecounter = 0;
         long lastswitchtoggle = 0; 
+        String UDPmsg;
     private:
 };
 
 class LEDServer{
     public:
         LEDServer(debugdisplay *disp);
-        serverConfig *serverConfigData;
+        serverConfig* serverConfigData;
         LEDServer();
         int start();
         CRGB *leds;
@@ -63,6 +65,7 @@ class LEDServer{
         bool enterAPMode();
         bool connectWifi();
         void InternalPCR();
+        void handleUDPMessage(uint8_t* msg);
 
         AsyncWebServer *WebServer;
         AsyncWebSocket *wsServer;
@@ -72,6 +75,7 @@ class LEDServer{
         debugdisplay display;
         bool startMasterServer();
         bool startSlaveServer();
+        
 
 };
 

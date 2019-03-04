@@ -10,7 +10,7 @@
 
 #include "config.h"
 #include "DebugDISPOled.h"
-#include "SPIFFSconfig.h"
+//#include "SPIFFSconfig.h"
 #include "LEDServer.h"
 
 
@@ -26,7 +26,7 @@ void setupPINS();
 *    Global Objects
 */
 debugdisplay display;
-wifiConfigManager configmanager(&display);
+//wifiConfigManager configmanager(&display);
 LEDServer mainserver(&display);
 
 /*
@@ -39,9 +39,6 @@ void setup() {
     setupPINS();
     display.init();
     initSPIFFS();
-    //configmanager.handleSetup();
-    //Serial.println(WiFi.SSID());
-    //Serial.println(WiFi.localIP());
     mainserver.start();
     
 }

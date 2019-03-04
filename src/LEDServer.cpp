@@ -39,6 +39,14 @@ LEDServer::LEDServer()
 int LEDServer::start()
 {
 
+    //##########
+    //Temporary
+
+    serverConfigData->Slaves = new IPAddress[1];
+    serverConfigData->Slaves[0] = IPAddress(192, 168, 0, 23);
+
+    //##########
+
     //returns 1 for successfull start, anything else is an error
     display.clearScreen();
     Serial.println("");
@@ -222,7 +230,8 @@ bool LEDServer::startSlaveServer()
 {
     display.printS(0, 0, "Slave");
     udp = new AsyncUDP();
-    if (udp->listenMulticast(IPAddress(239, 1, 2, 3), 1234))
+    //if (udp->listenMulticast(IPAddress(239, 1, 2, 3), 1234))
+    if (udp->listen(1234))
     {
         Serial.print("UDP Listening on IP: ");
         Serial.println(WiFi.localIP());
@@ -239,8 +248,11 @@ bool LEDServer::startSlaveServer()
             Serial.print(", Data: ");
             Serial.write(packet.data(), packet.length());
             Serial.println();
+            LEDServerInstance->handleUDPMessage(packet.data());
         });
     }
+    display.clearScreen();
+    display.printS(0, 0, "Slave@" + WiFi.localIP().toString());
     return true;
 }
 
@@ -385,12 +397,19 @@ void LEDServer::UDPBroadcast()
 
     if (!udp->connected())
     {
-        udp->connect(IPAddress(239, 1, 2, 3), 1234);
-        Serial.println("UDP Connected");
+        udp->connect(serverConfigData->Slaves[0], 1234);
     }
-    udp->print("Print!");
-    //udp->sendTo("Sentto", IPAddress(239,1,2,3), 1234);
-    Serial.println("Broadcastet!");
+    else if (udp->connected()){
+        Serial.println("UDP Connected");
+        udp->print("{\"test\": \"damn\"}");
+        Serial.println("Broadcastet!");
+    }    
+}
+
+void  LEDServer::handleUDPMessage(uint8_t* msg){
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject &json = jsonBuffer.parseObject(msg);
+    Serial.println(json["test"].as<String>());
 }
 
 bool LEDServer::readWifiConfig()
