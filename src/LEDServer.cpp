@@ -120,7 +120,6 @@ int LEDServer::start()
         Serial.println("Device is Slave");
         this->startSlaveServer();
     }
-
     return 1;
 }
 
@@ -132,7 +131,7 @@ bool LEDServer::connectWifi()
         enterAPMode();
         return true;
     }
-    else if (serverConfigData->stationSSID == "0")
+    else if (serverConfigData->stationSSID == "0" || serverConfigData->stationSSID == "")
     {
         display.printS(60, 0, "is 0");
         enterAPMode();
@@ -229,6 +228,11 @@ bool LEDServer::startMasterServer()
 bool LEDServer::startSlaveServer()
 {
     display.printS(0, 0, "Slave");
+    
+    frametimer = timerBegin(0, 80, true);
+    timerAttachInterrupt(frametimer, &onTimer, true);
+    timerAlarmWrite(frametimer, 33333, true);
+    timerAlarmEnable(frametimer);
     udp = new AsyncUDP();
     //if (udp->listenMulticast(IPAddress(239, 1, 2, 3), 1234))
     if (udp->listen(1234))
@@ -236,7 +240,7 @@ bool LEDServer::startSlaveServer()
         Serial.print("UDP Listening on IP: ");
         Serial.println(WiFi.localIP());
         udp->onPacket([](AsyncUDPPacket packet) {
-            Serial.print(packet.isBroadcast() ? "Broadcast" : packet.isMulticast() ? "Multicast" : "Unicast");
+            /*Serial.print(packet.isBroadcast() ? "Broadcast" : packet.isMulticast() ? "Multicast" : "Unicast");
             Serial.print(", From: ");
             Serial.print(packet.remoteIP());
             Serial.print(":");
@@ -247,7 +251,7 @@ bool LEDServer::startSlaveServer()
             Serial.print(packet.localPort());
             Serial.print(", Data: ");
             Serial.write(packet.data(), packet.length());
-            Serial.println();
+            Serial.println();*/
             LEDServerInstance->handleUDPMessage(packet.data());
         });
     }
@@ -306,16 +310,28 @@ bool LEDServer::update()
 
     if (this->serverStateData.interruptCounter > 0)
     {
+        //Serial.println("Update->interruptroutine");
+
         this->serverStateData.interruptCounter = 0;
 
         if (this->serverStateData.mode == 0)
         {
-            digitalWrite(PIN_POWERRELAY, LOW);
+            if (serverConfigData->LEDVariant == "WS"){
+                digitalWrite(PIN_POWERRELAY, LOW);
+            }
+            
+            if (serverConfigData->LEDVariant == "RGB"){
+                ledcWrite(RledChannel, 0);
+                ledcWrite(GledChannel, 0);
+                ledcWrite(BledChannel, 0);
+            }
+            
         }
         else if (this->serverStateData.mode == 1)
         {
-            digitalWrite(PIN_POWERRELAY, HIGH);
-            
+            if (serverConfigData->LEDVariant == "WS"){
+                digitalWrite(PIN_POWERRELAY, HIGH);
+            }
             if (serverStateData.framecounter == 0)
             {
                 for (int i = 0; i <= serverConfigData->numberLEDS; i++)
@@ -348,45 +364,72 @@ bool LEDServer::update()
         //
         //  If new Color hasnt been Displayed yet
         //
-        else if (this->serverStateData.OutputDone == false)
+        else if (this->serverStateData.mode == 4)
         {
             //
             //  If Led Variant is WS
             //
-            if (this->serverConfigData->LEDVariant == "WS")
-            {
-                for (int i = 0; i < serverConfigData->numberLEDS; i++)
-                {
-                    if ((this->serverStateData.solidcolor_r + this->serverStateData.solidcolor_g + this->serverStateData.solidcolor_b) > 5)
-                    {
-                        digitalWrite(PIN_POWERRELAY, HIGH);
-                    }
-                    else
-                    {
-                        digitalWrite(PIN_POWERRELAY, LOW);
-                    }
-                    this->leds[i].r = this->serverStateData.solidcolor_r;
-                    this->leds[i].g = this->serverStateData.solidcolor_g;
-                    this->leds[i].b = this->serverStateData.solidcolor_b;
-                }
-                FastLED.show();
-                this->serverStateData.OutputDone = true;
-                Serial.println("WS2812b ColorUpdate!");
-                Serial.println("");
-            }
+            displaySolidColors();
+            this->serverStateData.mode = 40; 
+        }
 
-            else if (this->serverConfigData->LEDVariant == "RGB")
-            {
-                ledcWrite(RledChannel, this->serverStateData.solidcolor_r);
-                ledcWrite(GledChannel, this->serverStateData.solidcolor_g);
-                ledcWrite(BledChannel, this->serverStateData.solidcolor_b);
-                Serial.println(this->serverStateData.solidcolor_r);
-                Serial.println(this->serverStateData.solidcolor_g);
-                Serial.println(this->serverStateData.solidcolor_b);
-                this->serverStateData.OutputDone = true;
-                Serial.println("RGB ColorUpdate!");
+        else if (this->serverStateData.mode == 5){
+            this->serverStateData.solidcolor_r = getSpectrum(serverStateData.framecounter, 0);
+            this->serverStateData.solidcolor_g = getSpectrum(serverStateData.framecounter, 120);
+            this->serverStateData.solidcolor_b = getSpectrum(serverStateData.framecounter, 240);
+            /*Serial.print(" R:");
+            Serial.print(this->serverStateData.solidcolor_r);
+            Serial.print(" G:");
+            Serial.print(this->serverStateData.solidcolor_g);
+            Serial.print(" B:");
+            Serial.println(this->serverStateData.solidcolor_b);
+            Serial.println(this->serverStateData.framecounter);*/
+            if (serverStateData.framecounter < 4096){
+                serverStateData.framecounter++;
+            }
+            else {
+                serverStateData.framecounter = 0;
+            }
+            displaySolidColors();
+            if ((serverStateData.framecounter % 10) == 0 ){
+                UDPtoClient(0);
             }
         }
+    }
+return true;
+}
+
+
+void LEDServer::displaySolidColors(){
+    if (this->serverConfigData->LEDVariant == "WS")
+    {
+        for (int i = 0; i < serverConfigData->numberLEDS; i++)
+        {
+            if ((this->serverStateData.solidcolor_r + this->serverStateData.solidcolor_g + this->serverStateData.solidcolor_b) > 5)
+            {
+                digitalWrite(PIN_POWERRELAY, HIGH);
+            }
+            else
+            {
+                digitalWrite(PIN_POWERRELAY, LOW);
+            }
+            this->leds[i].r = this->serverStateData.solidcolor_r;
+            this->leds[i].g = this->serverStateData.solidcolor_g;
+            this->leds[i].b = this->serverStateData.solidcolor_b;
+        }
+        FastLED.show();
+        Serial.println("WS2812b ColorUpdate!");
+    }
+    else if (this->serverConfigData->LEDVariant == "RGB")
+    {
+        Serial.println("RGB incomming");
+        ledcWrite(RledChannel, this->serverStateData.solidcolor_r);
+        ledcWrite(GledChannel, this->serverStateData.solidcolor_g);
+        ledcWrite(BledChannel, this->serverStateData.solidcolor_b);
+        Serial.println(this->serverStateData.solidcolor_r);
+        Serial.println(this->serverStateData.solidcolor_g);
+        Serial.println(this->serverStateData.solidcolor_b);
+        Serial.println("RGB ColorUpdate!");
     }
 }
 
@@ -406,10 +449,63 @@ void LEDServer::UDPBroadcast()
     }    
 }
 
+void LEDServer::UDPtoClient(int slavenr)
+{
+    
+    //udp->broadcastTo(test.c_str(), 1234);
+
+    if (!udp->connected())
+    {
+        udp->connect(serverConfigData->Slaves[slavenr], 1234);
+    }
+    int count = 0;
+    while (!udp->connected() && count < 5){
+        count++;
+        Serial.println("UDP Connecting...");
+    } 
+    if (udp->connected())
+    {
+        Serial.println("UDP Connected");
+        DynamicJsonBuffer jsonBuffer;
+        JsonObject &udpoutjson = jsonBuffer.createObject();
+        udpoutjson["MODE"] = serverStateData.mode;
+        udpoutjson["frame"] = serverStateData.framecounter;
+        if (serverStateData.mode == 4){
+            udpoutjson["color_r"] = serverStateData.solidcolor_r;
+            udpoutjson["color_g"] = serverStateData.solidcolor_g;
+            udpoutjson["color_b"] = serverStateData.solidcolor_b;
+        }
+        
+        String udpmsg;
+        udpoutjson.printTo(udpmsg);
+        udp->print(udpmsg);
+    }
+}
+
 void  LEDServer::handleUDPMessage(uint8_t* msg){
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject &json = jsonBuffer.parseObject(msg);
-    Serial.println(json["test"].as<String>());
+    DynamicJsonBuffer jsonBufferUDP;
+    JsonObject &udpinjson = jsonBufferUDP.parseObject(msg);
+    this->serverStateData.mode = udpinjson["MODE"];
+    if (this->serverStateData.mode == 4){
+        this->serverStateData.solidcolor_r = udpinjson["color_r"].as<int>();
+        this->serverStateData.solidcolor_g = udpinjson["color_g"].as<int>();
+        this->serverStateData.solidcolor_b = udpinjson["color_b"].as<int>();
+        Serial.println((String) this->serverStateData.solidcolor_r);
+        this->serverStateData.mode = 4;
+    }
+    else if (this->serverStateData.mode == 5){
+        this->serverStateData.framecounter = udpinjson["frame"].as<int>();
+    }
+    
+}
+
+int  LEDServer::getSpectrum(long relativePos, int offsetdegs){
+    int zerooffset = 128;
+    int timescale = 10;
+    int prescaler = 126;
+    float pi = 3.1415;
+    int value = zerooffset + (sin((( ((float) offsetdegs) /360.00) + ( (float) relativePos/4096.00 )) * timescale  *2.00 * pi) * prescaler);
+    return value;
 }
 
 bool LEDServer::readWifiConfig()
@@ -606,11 +702,16 @@ void LEDServer::handleMessage(AsyncWebSocketClient *client, uint8_t *rawdata, St
             {
                 int rgbdata;
                 sscanf((const char *)parsed["COLOR"], "%x", &rgbdata);
+                LEDServerInstance->serverStateData.mode = 4;
                 LEDServerInstance->serverStateData.solidcolor_r = (rgbdata >> 16) & 0xFF;
                 LEDServerInstance->serverStateData.solidcolor_g = (rgbdata >> 8) & 0xFF;
                 LEDServerInstance->serverStateData.solidcolor_b = rgbdata & 0xFF;
-                LEDServerInstance->serverStateData.OutputDone = false;
             }
+            else if (LEDServerInstance->serverStateData.mode == 5){
+
+            }
+            LEDServerInstance->UDPtoClient(0);
+
         }
     }
 }

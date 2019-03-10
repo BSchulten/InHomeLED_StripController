@@ -66,6 +66,9 @@ class LEDServer{
         bool connectWifi();
         void InternalPCR();
         void handleUDPMessage(uint8_t* msg);
+        void UDPtoClient(int slavenr);
+        int getSpectrum(long relativePos, int offsetdegs);
+        void displaySolidColors();
 
         AsyncWebServer *WebServer;
         AsyncWebSocket *wsServer;
